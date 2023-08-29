@@ -39,17 +39,37 @@ class OVMMDynNavRLEnv(DynNavRLEnv):
                     self._receptacle_categories[name] = category
             self._loaded_receptacle_categories = True
 
+        self._object_semantic_ids: Dict[int, int] = {}
+        self._object_categories: Dict[str, str] = {}
+        self._obj_category_to_obj_category_id = (
+            dataset.obj_category_to_obj_category_id
+        )
+        with open("data/objects/object_categories.csv") as f:
+            for line in f.readlines():
+                name, category = line.strip().split(",")
+                self._object_categories[name] = category
+        self._loaded_object_categories = True
+
     @property
     def receptacle_semantic_ids(self):
         return self._receptacle_semantic_ids
+    
+    @property
+    def object_semantic_ids(self):
+        return self._object_semantic_ids
 
     @property
     def loaded_receptacle_categories(self):
         return self._loaded_receptacle_categories
 
+    @property
+    def loaded_object_categories(self):
+        return self._loaded_object_categories
+
     def reset(self, episode: Episode):
         self._receptacle_semantic_ids = {}
-        self._cache_receptacles()
+        self._object_semantic_ids = {}
+        self._cache_all()
         obs = super().reset(episode)
         self._nav_to_obj_goal = np.stack(
             [
@@ -61,7 +81,7 @@ class OVMMDynNavRLEnv(DynNavRLEnv):
         )
         return obs
 
-    def _cache_receptacles(self):
+    def _cache_all(self):
         # TODO: potentially this is slow, get receptacle list from episode instead
         rom = self._sim.get_rigid_object_manager()
         for obj_handle in rom.get_object_handles():
@@ -82,6 +102,18 @@ class OVMMDynNavRLEnv(DynNavRLEnv):
                     category
                 ]
                 self._receptacle_semantic_ids[obj.object_id] = category_id + 1
+            else:
+                obj_name = osp.basename(obj.creation_attributes.handle).split(
+                    ".", 1
+                )[0]
+                category = self._object_categories.get(obj_name)
+                if (
+                    category is None
+                    or category not in self._obj_category_to_obj_category_id
+                ):
+                    continue
+                category_id = self._obj_category_to_obj_category_id[category]
+                self._object_semantic_ids[obj.object_id] = category_id + 1
 
     def _generate_nav_to_pos(
         self, episode, start_hold_obj_idx=None, force_idx=None

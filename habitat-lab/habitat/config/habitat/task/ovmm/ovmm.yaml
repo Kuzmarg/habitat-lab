@@ -55,6 +55,7 @@ defaults:
     - is_holding_sensor
     - ovmm_nav_goal_segmentation_sensor
     - receptacle_segmentation_sensor
+    - all_objects_segmentation_sensor
   - _self_
 
 type: OVMMNavToObjTask-v0

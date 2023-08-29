@@ -447,6 +447,12 @@ class ReceptacleSegmentationSensorConfig(LabSensorConfig):
 
 
 @attr.s(auto_attribs=True, slots=True)
+class AllObjectsSegmentationSensorConfig(LabSensorConfig):
+    type: str = "AllObjectsSegmentationSensor"
+    blank_out_prob: float = 0.0
+
+
+@attr.s(auto_attribs=True, slots=True)
 class OVMMNavGoalSegmentationSensorConfig(LabSensorConfig):
     type: str = "OVMMNavGoalSegmentationSensor"
     blank_out_prob: float = 0.0
@@ -1858,6 +1864,12 @@ cs.store(
     group="habitat/task/lab_sensors",
     name="receptacle_segmentation_sensor",
     node=ReceptacleSegmentationSensorConfig,
+)
+cs.store(
+    package="habitat.task.lab_sensors.all_objects_segmentation_sensor",
+    group="habitat/task/lab_sensors",
+    name="all_objects_segmentation_sensor",
+    node=AllObjectsSegmentationSensorConfig,
 )
 cs.store(
     package="habitat.task.lab_sensors.ovmm_nav_goal_segmentation_sensor",
