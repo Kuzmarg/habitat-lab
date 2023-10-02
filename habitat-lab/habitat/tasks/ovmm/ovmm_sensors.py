@@ -23,6 +23,8 @@ from habitat.tasks.ovmm.sub_tasks.nav_to_obj_sensors import (
     OVMMNavToObjSucc,
     OVMMRotDistToGoal,
     TargetIoUCoverage,
+    IsGoalSeen,
+    MeanDepth
 )
 from habitat.tasks.rearrange.sub_tasks.nav_to_obj_sensors import (
     DistToGoal,

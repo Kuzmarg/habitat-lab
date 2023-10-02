@@ -767,6 +767,15 @@ class TargetIoUCoverageMeasurementConfig(MeasurementConfig):
 
 
 @attr.s(auto_attribs=True, slots=True)
+class IsGoalSeenMeasurementConfig(MeasurementConfig):
+    type: str = "IsGoalSeen"
+    max_goal_dist: float = 0.1
+
+@attr.s(auto_attribs=True, slots=True)
+class MeanDepthMeasurementConfig(MeasurementConfig):
+    type: str = "MeanDepth"
+
+@attr.s(auto_attribs=True, slots=True)
 class PickGoalIoUCoverageMeasurementConfig(TargetIoUCoverageMeasurementConfig):
     type: str = "PickGoalIoUCoverage"
 
@@ -1866,6 +1875,18 @@ cs.store(
     group="habitat/task/lab_sensors",
     name="receptacle_segmentation_sensor",
     node=ReceptacleSegmentationSensorConfig,
+)
+cs.store(
+    package="habitat.task.measurements.is_goal_seen",
+    group="habitat/task/measurements",
+    name="is_goal_seen",
+    node=IsGoalSeenMeasurementConfig,
+)
+cs.store(
+    package="habitat.task.measurements.mean_depth",
+    group="habitat/task/measurements",
+    name="mean_depth",
+    node=MeanDepthMeasurementConfig,
 )
 cs.store(
     package="habitat.task.lab_sensors.all_objects_segmentation_sensor",

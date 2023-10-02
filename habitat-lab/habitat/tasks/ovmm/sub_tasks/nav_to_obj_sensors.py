@@ -350,6 +350,76 @@ class OVMMNavToObjReward(NavToObjReward):
 
 
 @registry.register_measure
+class IsGoalSeen(Measure):
+    cls_uuid: str = "is_goal_seen"
+
+    def __init__(self, *args, sim, task, config, **kwargs):
+        self._instance_ids_start = sim.habitat_config.instance_ids_start
+        self._is_nav_to_obj = task.is_nav_to_obj
+        self._max_goal_dist = config.max_goal_dist
+        self._sim = sim
+        super().__init__(*args, sim=sim, task=task, config=config, **kwargs)
+
+    @staticmethod
+    def _get_uuid(*args, **kwargs):
+        return IsGoalSeen.cls_uuid
+
+    def _get_object_id(self, goal):
+        if self._is_nav_to_obj:
+            return self._sim.scene_obj_ids[int(goal.object_id)]
+        else:
+            return int(goal.object_id)
+
+    def _get_goals(self, episode):
+        """key to access the goal in the episode"""
+        if self._is_nav_to_obj:
+            return episode.candidate_objects
+        else:
+            return episode.candidate_goal_receps
+
+    def _filter_out_goals_not_in_view(self, goals, observations):
+        """filters out goals that are not in the agent's viewport"""
+        filtered_goals = []
+        for goal in goals:
+            instance_id = self._get_object_id(goal) + self._instance_ids_start
+            if instance_id in observations["robot_head_panoptic"]:
+                filtered_goals.append(goal)
+        return filtered_goals
+
+    def _get_closest_object_id_in_view(self, episode, observations):
+        """returns the object id of the closest object to the agent"""
+        goals = self._get_goals(episode)
+        goals = self._filter_out_goals_not_in_view(goals, observations)
+        if len(goals) == 0:
+            return 0
+        return 1
+
+    def reset_metric(self, *args, task, **kwargs):
+        self.update_metric(*args, task=task, **kwargs)
+
+    def update_metric(self, *args, episode, task, observations, **kwargs):
+        self._metric = self._get_closest_object_id_in_view(episode, observations)
+
+
+@registry.register_measure
+class MeanDepth(Measure):
+    cls_uuid: str = "mean_depth"
+
+    def __init__(self, *args, sim, task, config, **kwargs):
+        super().__init__(*args, sim=sim, task=task, config=config, **kwargs)
+
+    @staticmethod
+    def _get_uuid(*args, **kwargs):
+        return MeanDepth.cls_uuid
+
+    def reset_metric(self, *args, task, **kwargs):
+        self._metric = 0
+
+    def update_metric(self, *args, episode, task, observations, **kwargs):
+        self._metric = np.mean(observations["robot_head_depth"])
+
+
+@registry.register_measure
 class TargetIoUCoverage(Measure):
     cls_uuid: str = "target_iou_coverage"
 
