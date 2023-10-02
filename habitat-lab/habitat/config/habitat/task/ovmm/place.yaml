@@ -69,7 +69,7 @@ measurements:
     check_stability: True
     ee_resting_success_threshold: 100.0
   ovmm_place_reward:
-    sparse_reward: True
+    sparse_reward: False
     ee_resting_success_threshold: 100.0
     navmesh_violate_pen: 0.05
     drop_pen: 1.0

@@ -215,6 +215,11 @@ def load_resume_state(
     else:
         filename = filename_or_config
 
+    KOSTIL = True
+
+    if KOSTIL:
+        filename = 'data/new_checkpoints/ovmm/place/place.pth'
+
     if not osp.exists(filename):
         return None
 

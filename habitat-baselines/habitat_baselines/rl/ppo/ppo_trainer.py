@@ -223,7 +223,9 @@ class PPOTrainer(BaseRLTrainer):
         if resume_state is None:
             resume_state = load_resume_state(self.config)
 
-        if resume_state is not None:
+        KOSTIL = True
+
+        if not KOSTIL and resume_state is not None:
             self.config = self._get_resume_state_config_or_new_config(
                 resume_state["config"]
             )
@@ -315,10 +317,13 @@ class PPOTrainer(BaseRLTrainer):
         ):
             os.makedirs(self.config.habitat_baselines.checkpoint_folder)
 
+        KOSTIL = True
+
         self._setup_actor_critic_agent(ppo_cfg)
         if resume_state is not None:
             self.agent.load_state_dict(resume_state["state_dict"])
-            self.agent.optimizer.load_state_dict(resume_state["optim_state"])
+            if not KOSTIL:
+                self.agent.optimizer.load_state_dict(resume_state["optim_state"])
         if self._is_distributed:
             self.agent.init_distributed(find_unused_params=False)  # type: ignore
 
@@ -775,28 +780,31 @@ class PPOTrainer(BaseRLTrainer):
         if self._is_distributed:
             torch.distributed.barrier()
 
+        KOSTIL = True
+
         resume_run_id = None
         if resume_state is not None:
             self.agent.load_state_dict(resume_state["state_dict"])
-            self.agent.optimizer.load_state_dict(resume_state["optim_state"])
-            lr_scheduler.load_state_dict(resume_state["lr_sched_state"])
+            if not KOSTIL:
+                self.agent.optimizer.load_state_dict(resume_state["optim_state"])
+                lr_scheduler.load_state_dict(resume_state["lr_sched_state"])
 
-            requeue_stats = resume_state["requeue_stats"]
-            self.env_time = requeue_stats["env_time"]
-            self.pth_time = requeue_stats["pth_time"]
-            self.num_steps_done = requeue_stats["num_steps_done"]
-            self.num_updates_done = requeue_stats["num_updates_done"]
-            self._last_checkpoint_percent = requeue_stats[
-                "_last_checkpoint_percent"
-            ]
-            count_checkpoints = requeue_stats["count_checkpoints"]
-            prev_time = requeue_stats["prev_time"]
+                requeue_stats = resume_state["requeue_stats"]
+                self.env_time = requeue_stats["env_time"]
+                self.pth_time = requeue_stats["pth_time"]
+                self.num_steps_done = requeue_stats["num_steps_done"]
+                self.num_updates_done = requeue_stats["num_updates_done"]
+                self._last_checkpoint_percent = requeue_stats[
+                    "_last_checkpoint_percent"
+                ]
+                count_checkpoints = requeue_stats["count_checkpoints"]
+                prev_time = requeue_stats["prev_time"]
 
-            self.running_episode_stats = requeue_stats["running_episode_stats"]
-            self.window_episode_stats.update(
-                requeue_stats["window_episode_stats"]
-            )
-            resume_run_id = requeue_stats.get("run_id", None)
+                self.running_episode_stats = requeue_stats["running_episode_stats"]
+                self.window_episode_stats.update(
+                    requeue_stats["window_episode_stats"]
+                )
+                resume_run_id = requeue_stats.get("run_id", None)
 
         ppo_cfg = self.config.habitat_baselines.rl.ppo
 

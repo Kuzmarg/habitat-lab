@@ -89,7 +89,7 @@ habitat_baselines:
       num_mini_batch: 2
       value_loss_coef: 0.5
       entropy_coef: 0.001
-      lr: 3e-4
+      lr: 3e-9
       eps: 1e-5
       max_grad_norm: 0.2
       num_steps: 128
