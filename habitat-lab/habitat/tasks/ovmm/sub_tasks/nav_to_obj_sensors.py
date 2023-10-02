@@ -355,8 +355,8 @@ class IsGoalSeen(Measure):
 
     def __init__(self, *args, sim, task, config, **kwargs):
         self._instance_ids_start = sim.habitat_config.instance_ids_start
-        self._is_nav_to_obj = task.is_nav_to_obj
-        self._max_goal_dist = config.max_goal_dist
+        self._is_nav_to_obj = False
+        self._max_goal_dist = 5
         self._sim = sim
         super().__init__(*args, sim=sim, task=task, config=config, **kwargs)
 
@@ -391,14 +391,31 @@ class IsGoalSeen(Measure):
         goals = self._get_goals(episode)
         goals = self._filter_out_goals_not_in_view(goals, observations)
         if len(goals) == 0:
-            return 0
-        return 1
+            return -1
+        # closest_idx = find_closest_goal_index_within_distance(
+        #     self._sim,
+        #     goals,
+        #     episode.episode_id,
+        #     max_dist=self._max_goal_dist,
+        #     use_all_viewpoints=True,
+        # )
+        # if closest_idx == -1:
+        #     return -1
+
+        # Just look for the id of first seen goal receptacle
+        return self._get_object_id(goals[0])
 
     def reset_metric(self, *args, task, **kwargs):
         self.update_metric(*args, task=task, **kwargs)
 
     def update_metric(self, *args, episode, task, observations, **kwargs):
-        self._metric = self._get_closest_object_id_in_view(episode, observations)
+        object_id = self._get_closest_object_id_in_view(episode, observations)
+        if object_id == -1:
+            self._metric = 0
+            return
+        
+        obj_sum = np.sum(observations["robot_head_panoptic"] == object_id + self._instance_ids_start)
+        self._metric = obj_sum/(observations["robot_head_panoptic"].shape[0]*observations["robot_head_panoptic"].shape[1])
 
 
 @registry.register_measure

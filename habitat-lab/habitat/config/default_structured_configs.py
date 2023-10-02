@@ -880,6 +880,8 @@ class ObjAnywhereOnGoalMeasurementConfig(MeasurementConfig):
 @attr.s(auto_attribs=True, slots=True)
 class PlaceRewardMeasurementConfig(MeasurementConfig):
     type: str = "PlaceReward"
+    goal_seen_reward: float = 3.0
+    camera_block_pen: float = 5.0
     dist_reward: float = 2.0
     place_reward: float = 5.0
     drop_pen: float = 0.0
