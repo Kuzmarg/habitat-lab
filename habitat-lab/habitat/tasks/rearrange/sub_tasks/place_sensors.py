@@ -97,6 +97,7 @@ class PlaceReward(RearrangeReward):
         self._time_of_release = 0
         self._prev_reached_goal = False
         self._start_pos = self._sim.get_robot_data(self.robot_id).robot.base_pos
+        self._last_perc_seen = None
 
         super().reset_metric(
             *args,
@@ -117,21 +118,22 @@ class PlaceReward(RearrangeReward):
         reward = self._metric
         
 
-        cur_x, cur_y, cur_z = self._sim.get_robot_data(self.robot_id).robot.base_pos
-        start_x, start_y, start_z = self._start_pos
-        change_in_pos = np.sqrt((cur_x - start_x)**2 + (cur_z - start_z)**2)
-        if change_in_pos > 0.75:
+        # penalize being stranded farther than 1 meter from start
+        cur_pose = self._sim.get_robot_data(self.robot_id).robot.base_pos
+        change_in_pos = np.sqrt((cur_pose[0] - self._start_pos[0])**2 + (cur_pose[2] - self._start_pos[2])**2)
+        if change_in_pos > 1:
             reward -= self._stranded_pen
 
-        # penalize blocking camera with hand
+        # penalize blocking camera with manipulator
         if task.measurements.measures[MeanDepth.cls_uuid].get_metric() < self._camera_block_depth:
             reward -= self._camera_block_pen
 
         # reward for seeing the goal
-        if task.measurements.measures[IsGoalSeen.cls_uuid].get_metric() < self._goal_seen_thrs:
-            reward += self._goal_seen_reward * task.measurements.measures[IsGoalSeen.cls_uuid].get_metric() / self._goal_seen_thrs
-        else:
-            reward += self._goal_seen_reward
+        perc_seen = task.measurements.measures[IsGoalSeen.cls_uuid].get_metric()
+        perc_seen = min(perc_seen, self._goal_seen_thrs)
+        if self._last_perc_seen is None:
+            self._last_perc_seen = perc_seen
+        reward += self._goal_seen_reward * (perc_seen - self._last_perc_seen) / self._goal_seen_thrs
 
         ee_to_rest_distance = task.measurements.measures[
             EndEffectorToRestDistance.cls_uuid
@@ -223,6 +225,9 @@ class PlaceReward(RearrangeReward):
         self._prev_dist = dist_to_goal
         self._curr_step += 1
 
+        # Penalize waiting when ready to drop the object
+        # if dist_to_goal < min_dist and cur_picked and perc_seen > self._goal_seen_thrs:
+        #     reward -= self._drop_pen
         self._metric = reward
 
 
