@@ -433,7 +433,7 @@ class MeanDepth(Measure):
         self._metric = 0
 
     def update_metric(self, *args, episode, task, observations, **kwargs):
-        self._metric = np.mean(observations["robot_head_depth"])
+        self._metric = 10 * np.mean(observations["robot_head_depth"]) # denormalize
 
 
 @registry.register_measure

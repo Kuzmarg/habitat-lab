@@ -885,6 +885,8 @@ class PlaceRewardMeasurementConfig(MeasurementConfig):
     dist_reward: float = 2.0
     place_reward: float = 5.0
     drop_pen: float = 0.0
+    camera_block_depth: float = 0.35
+    goal_seen_thrs: float = 0.2
     use_diff: bool = True
     use_ee_dist: bool = False
     wrong_drop_should_end: bool = True
