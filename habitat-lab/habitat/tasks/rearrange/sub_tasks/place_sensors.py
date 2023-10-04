@@ -4,7 +4,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-
+import numpy as np
 from typing import Any
 from habitat.core.embodied_task import Measure
 from habitat.core.registry import registry
@@ -31,6 +31,7 @@ class PlaceReward(RearrangeReward):
     def __init__(self, *args, sim, config, task, **kwargs):
         self._camera_block_pen = config.camera_block_pen
         self._goal_seen_thrs = config.goal_seen_thrs
+        self._stranded_pen = config.stranded_pen
         self._camera_block_depth = config.camera_block_depth
         self._goal_seen_reward = config.goal_seen_reward
         self._prev_dist = -1.0
@@ -49,6 +50,7 @@ class PlaceReward(RearrangeReward):
         self._curr_step = 0
         self._prev_reached_goal = False
         self._max_steps_to_reach_surface = config.max_steps_to_reach_surface
+        self._start_pos = None
         self._ee_resting_success_threshold = (
             config.ee_resting_success_threshold
         )
@@ -94,6 +96,8 @@ class PlaceReward(RearrangeReward):
         self._curr_step = 0
         self._time_of_release = 0
         self._prev_reached_goal = False
+        self._start_pos = self._sim.get_robot_data(self.robot_id).robot.base_pos
+
         super().reset_metric(
             *args,
             episode=episode,
@@ -112,6 +116,13 @@ class PlaceReward(RearrangeReward):
         )
         reward = self._metric
         
+
+        cur_x, cur_y, cur_z = self._sim.get_robot_data(self.robot_id).robot.base_pos
+        start_x, start_y, start_z = self._start_pos
+        change_in_pos = np.sqrt((cur_x - start_x)**2 + (cur_z - start_z)**2)
+        if change_in_pos > 0.75:
+            reward -= self._stranded_pen
+
         # penalize blocking camera with hand
         if task.measurements.measures[MeanDepth.cls_uuid].get_metric() < self._camera_block_depth:
             reward -= self._camera_block_pen
