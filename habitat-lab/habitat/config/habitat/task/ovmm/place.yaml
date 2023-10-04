@@ -76,6 +76,7 @@ measurements:
     navmesh_violate_pen: 0.05
     drop_pen: 1.0
     place_reward: 20.0
+    stranded_pen: 5.0
     stability_reward: 1.0
     camera_block_depth: 0.35
     goal_seen_thrs: 0.2

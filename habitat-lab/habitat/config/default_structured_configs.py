@@ -887,6 +887,7 @@ class PlaceRewardMeasurementConfig(MeasurementConfig):
     drop_pen: float = 0.0
     camera_block_depth: float = 0.35
     goal_seen_thrs: float = 0.2
+    stranded_pen: float = 5.0
     use_diff: bool = True
     use_ee_dist: bool = False
     wrong_drop_should_end: bool = True
