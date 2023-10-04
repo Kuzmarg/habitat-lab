@@ -39,7 +39,7 @@ constraint_violation_ends_episode: False
 constraint_violation_drops_object: True
 reward_measure: ovmm_place_reward
 success_measure: ovmm_place_success
-success_reward: 10.0
+success_reward: 0.0
 slack_reward: -0.005
 spawn_reference: view_points
 spawn_max_dists_to_obj: 0.0

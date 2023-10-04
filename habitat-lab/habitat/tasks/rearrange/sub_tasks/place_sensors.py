@@ -117,8 +117,8 @@ class PlaceReward(RearrangeReward):
         reward = self._metric
         
 
-        cur_x, cur_y, cur_z = self._sim.get_robot_data(self.robot_id).robot.base_pos
-        start_x, start_y, start_z = self._start_pos
+        cur_x, _, cur_z = self._sim.get_robot_data(self.robot_id).robot.base_pos
+        start_x, _, start_z = self._start_pos
         change_in_pos = np.sqrt((cur_x - start_x)**2 + (cur_z - start_z)**2)
         if change_in_pos > 0.75:
             reward -= self._stranded_pen
