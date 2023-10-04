@@ -196,6 +196,70 @@ class ReceptacleSegmentationSensor(Sensor):
         return obs
 
 
+@registry.register_sensor
+class AllObjectsSegmentationSensor(Sensor):
+    cls_uuid: str = "all_objects_segmentation"
+    panoptic_uuid: str = "robot_head_panoptic"
+
+    def __init__(
+        self,
+        sim,
+        config,
+        *args: Any,
+        **kwargs: Any,
+    ):
+        self._config = config
+        self._sim = sim
+        self._instance_ids_start = self._sim.habitat_config.instance_ids_start
+        self._blank_out_prob = self._config.blank_out_prob
+        self.resolution = (
+            sim.agents[0]
+            ._sensors[self.panoptic_uuid]
+            .specification()
+            .resolution
+        )
+        super().__init__(config=config)
+
+    def _get_uuid(self, *args: Any, **kwargs: Any) -> str:
+        return self.cls_uuid
+
+    def _get_sensor_type(self, *args: Any, **kwargs: Any):
+        return SensorTypes.SEMANTIC
+
+    def _get_observation_space(self, *args, **kwargs):
+        return spaces.Box(
+            shape=(
+                self.resolution[0],
+                self.resolution[1],
+                1,
+            ),
+            low=np.iinfo(np.uint32).min,
+            high=np.iinfo(np.uint32).max,
+            dtype=np.int32,
+        )
+
+    def get_observation(
+        self, observations, *args, episode, task: OVMMDynNavRLEnv, **kwargs
+    ):
+        obs = np.copy(observations[self.panoptic_uuid])
+        obj_id_map = np.zeros(np.max(obs) + 1, dtype=np.int32)
+        assert (
+            task.loaded_object_categories
+        ), "Empty object semantic IDs, task didn't cache them."
+        for obj_id, semantic_id in task.object_semantic_ids.items():
+            instance_id = obj_id + self._instance_ids_start
+            # Skip if receptacle is not in the agent's viewport or if the instance
+            # is selected to be blanked out randomly
+            if (
+                instance_id >= obj_id_map.shape[0]
+                or np.random.random() < self._blank_out_prob
+            ):
+                continue
+            obj_id_map[instance_id] = semantic_id
+        obs = obj_id_map[obs]
+        return obs
+
+
 @registry.register_measure
 class OVMMRotDistToGoal(RotDistToGoal):
     """
@@ -283,6 +347,93 @@ class OVMMNavToObjReward(NavToObjReward):
     @property
     def _rot_dist_to_goal_cls_uuid(self):
         return OVMMRotDistToGoal.cls_uuid
+
+
+@registry.register_measure
+class IsGoalSeen(Measure):
+    cls_uuid: str = "is_goal_seen"
+
+    def __init__(self, *args, sim, task, config, **kwargs):
+        self._instance_ids_start = sim.habitat_config.instance_ids_start
+        self._is_nav_to_obj = False
+        self._max_goal_dist = 5
+        self._sim = sim
+        super().__init__(*args, sim=sim, task=task, config=config, **kwargs)
+
+    @staticmethod
+    def _get_uuid(*args, **kwargs):
+        return IsGoalSeen.cls_uuid
+
+    def _get_object_id(self, goal):
+        if self._is_nav_to_obj:
+            return self._sim.scene_obj_ids[int(goal.object_id)]
+        else:
+            return int(goal.object_id)
+
+    def _get_goals(self, episode):
+        """key to access the goal in the episode"""
+        if self._is_nav_to_obj:
+            return episode.candidate_objects
+        else:
+            return episode.candidate_goal_receps
+
+    def _filter_out_goals_not_in_view(self, goals, observations):
+        """filters out goals that are not in the agent's viewport"""
+        filtered_goals = []
+        for goal in goals:
+            instance_id = self._get_object_id(goal) + self._instance_ids_start
+            if instance_id in observations["robot_head_panoptic"]:
+                filtered_goals.append(goal)
+        return filtered_goals
+
+    def _get_closest_object_id_in_view(self, episode, observations):
+        """returns the object id of the closest object to the agent"""
+        goals = self._get_goals(episode)
+        goals = self._filter_out_goals_not_in_view(goals, observations)
+        if len(goals) == 0:
+            return -1
+        # closest_idx = find_closest_goal_index_within_distance(
+        #     self._sim,
+        #     goals,
+        #     episode.episode_id,
+        #     max_dist=self._max_goal_dist,
+        #     use_all_viewpoints=True,
+        # )
+        # if closest_idx == -1:
+        #     return -1
+
+        # Just look for the id of first seen goal receptacle
+        return self._get_object_id(goals[0])
+
+    def reset_metric(self, *args, task, **kwargs):
+        self.update_metric(*args, task=task, **kwargs)
+
+    def update_metric(self, *args, episode, task, observations, **kwargs):
+        object_id = self._get_closest_object_id_in_view(episode, observations)
+        if object_id == -1:
+            self._metric = 0
+            return
+        
+        obj_sum = np.sum(observations["robot_head_panoptic"] == object_id + self._instance_ids_start)
+        self._metric = obj_sum/(observations["robot_head_panoptic"].shape[0]*observations["robot_head_panoptic"].shape[1])
+
+
+@registry.register_measure
+class MeanDepth(Measure):
+    cls_uuid: str = "mean_depth"
+
+    def __init__(self, *args, sim, task, config, **kwargs):
+        super().__init__(*args, sim=sim, task=task, config=config, **kwargs)
+
+    @staticmethod
+    def _get_uuid(*args, **kwargs):
+        return MeanDepth.cls_uuid
+
+    def reset_metric(self, *args, task, **kwargs):
+        self._metric = 0
+
+    def update_metric(self, *args, episode, task, observations, **kwargs):
+        self._metric = 10 * np.mean(observations["robot_head_depth"]) # denormalize
 
 
 @registry.register_measure

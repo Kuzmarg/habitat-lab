@@ -15,6 +15,8 @@ defaults:
     - ovmm_ee_to_place_goal_distance
     - ovmm_object_to_place_goal_distance
     - obj_anywhere_on_goal
+    - is_goal_seen
+    - mean_depth
     - object_at_rest
     - ovmm_placement_stability
     - ovmm_place_success
@@ -73,6 +75,11 @@ measurements:
     ee_resting_success_threshold: 100.0
     navmesh_violate_pen: 0.05
     drop_pen: 1.0
+    place_reward: 20.0
+    stability_reward: 1.0
+    camera_block_depth: 0.35
+    goal_seen_thrs: 0.2
+    dist_reward: 20.0
     max_steps_to_reach_surface: 20
     robot_collisions_pen: 1.0
     robot_collisions_end_pen: 5.0

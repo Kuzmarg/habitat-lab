@@ -17,6 +17,10 @@ from habitat.tasks.rearrange.rearrange_sensors import (
     RearrangeReward,
     RobotForce,
 )
+from habitat.tasks.ovmm.sub_tasks.nav_to_obj_sensors import (
+    IsGoalSeen,
+    MeanDepth
+)
 from habitat.tasks.rearrange.utils import rearrange_logger
 
 
@@ -25,6 +29,10 @@ class PlaceReward(RearrangeReward):
     cls_uuid: str = "place_reward"
 
     def __init__(self, *args, sim, config, task, **kwargs):
+        self._camera_block_pen = config.camera_block_pen
+        self._goal_seen_thrs = config.goal_seen_thrs
+        self._camera_block_depth = config.camera_block_depth
+        self._goal_seen_reward = config.goal_seen_reward
         self._prev_dist = -1.0
         self._prev_dropped = False
         self._metric = None
@@ -103,6 +111,16 @@ class PlaceReward(RearrangeReward):
             **kwargs
         )
         reward = self._metric
+        
+        # penalize blocking camera with hand
+        if task.measurements.measures[MeanDepth.cls_uuid].get_metric() < self._camera_block_depth:
+            reward -= self._camera_block_pen
+
+        # reward for seeing the goal
+        if task.measurements.measures[IsGoalSeen.cls_uuid].get_metric() < self._goal_seen_thrs:
+            reward += self._goal_seen_reward * task.measurements.measures[IsGoalSeen.cls_uuid].get_metric() / self._goal_seen_thrs
+        else:
+            reward += self._goal_seen_reward
 
         ee_to_rest_distance = task.measurements.measures[
             EndEffectorToRestDistance.cls_uuid

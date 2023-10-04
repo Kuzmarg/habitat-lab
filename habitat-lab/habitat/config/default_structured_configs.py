@@ -450,6 +450,12 @@ class ReceptacleSegmentationSensorConfig(LabSensorConfig):
 
 
 @attr.s(auto_attribs=True, slots=True)
+class AllObjectsSegmentationSensorConfig(LabSensorConfig):
+    type: str = "AllObjectsSegmentationSensor"
+    blank_out_prob: float = 0.0
+
+
+@attr.s(auto_attribs=True, slots=True)
 class OVMMNavGoalSegmentationSensorConfig(LabSensorConfig):
     type: str = "OVMMNavGoalSegmentationSensor"
     blank_out_prob: float = 0.0
@@ -761,6 +767,15 @@ class TargetIoUCoverageMeasurementConfig(MeasurementConfig):
 
 
 @attr.s(auto_attribs=True, slots=True)
+class IsGoalSeenMeasurementConfig(MeasurementConfig):
+    type: str = "IsGoalSeen"
+    max_goal_dist: float = 0.1
+
+@attr.s(auto_attribs=True, slots=True)
+class MeanDepthMeasurementConfig(MeasurementConfig):
+    type: str = "MeanDepth"
+
+@attr.s(auto_attribs=True, slots=True)
 class PickGoalIoUCoverageMeasurementConfig(TargetIoUCoverageMeasurementConfig):
     type: str = "PickGoalIoUCoverage"
 
@@ -865,9 +880,13 @@ class ObjAnywhereOnGoalMeasurementConfig(MeasurementConfig):
 @attr.s(auto_attribs=True, slots=True)
 class PlaceRewardMeasurementConfig(MeasurementConfig):
     type: str = "PlaceReward"
+    goal_seen_reward: float = 3.0
+    camera_block_pen: float = 5.0
     dist_reward: float = 2.0
     place_reward: float = 5.0
     drop_pen: float = 0.0
+    camera_block_depth: float = 0.35
+    goal_seen_thrs: float = 0.2
     use_diff: bool = True
     use_ee_dist: bool = False
     wrong_drop_should_end: bool = True
@@ -1860,6 +1879,24 @@ cs.store(
     group="habitat/task/lab_sensors",
     name="receptacle_segmentation_sensor",
     node=ReceptacleSegmentationSensorConfig,
+)
+cs.store(
+    package="habitat.task.measurements.is_goal_seen",
+    group="habitat/task/measurements",
+    name="is_goal_seen",
+    node=IsGoalSeenMeasurementConfig,
+)
+cs.store(
+    package="habitat.task.measurements.mean_depth",
+    group="habitat/task/measurements",
+    name="mean_depth",
+    node=MeanDepthMeasurementConfig,
+)
+cs.store(
+    package="habitat.task.lab_sensors.all_objects_segmentation_sensor",
+    group="habitat/task/lab_sensors",
+    name="all_objects_segmentation_sensor",
+    node=AllObjectsSegmentationSensorConfig,
 )
 cs.store(
     package="habitat.task.lab_sensors.ovmm_nav_goal_segmentation_sensor",
