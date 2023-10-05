@@ -226,8 +226,8 @@ class PlaceReward(RearrangeReward):
         self._curr_step += 1
 
         # Penalize waiting when ready to drop the object
-        # if dist_to_goal < min_dist and cur_picked and perc_seen > self._goal_seen_thrs:
-        #     reward -= self._drop_pen
+        if dist_to_goal < min_dist and cur_picked and perc_seen > self._goal_seen_thrs:
+            reward -= self._drop_pen
         self._metric = reward
 
 

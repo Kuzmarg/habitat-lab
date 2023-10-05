@@ -75,20 +75,22 @@ measurements:
     ee_resting_success_threshold: 100.0
     navmesh_violate_pen: 0.05
     drop_pen: 1.0
-    place_reward: 20.0
-    stability_reward: 10.0
+    place_reward: 70.0
+    stability_reward: 25.0
     stranded_pen: 5.0
     camera_block_pen: 5.0
     camera_block_depth: 0.35
     goal_seen_thrs: 0.3
-    goal_seen_reward: 15.0
-    dist_reward: 20.0
+    goal_seen_reward: 30.0
+    dist_reward: 40.0
     min_dist_to_goal: 0.2
     max_steps_to_reach_surface: 20
-    robot_collisions_pen: 3.0
-    robot_collisions_end_pen: 5.0
+    robot_collisions_pen: 10.0
+    force_pen: 0.5
+    max_force_pen: 10.0
+    robot_collisions_end_pen: 100.0
   robot_collisions_terminate:
-    max_num_collisions: 0
+    max_num_collisions: 10
 lab_sensors:
   joint_sensor:
     dimensionality: 10
